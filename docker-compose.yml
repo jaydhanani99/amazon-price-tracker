@@ -1,0 +1,44 @@
+# This file is for only local development not for the production deployment
+version: "3"
+
+services:
+  app:
+    build:
+      context: .
+    ports:
+      - "9000:9000"
+    volumes:
+      - ./app:/app
+      # It runs testcase wait_for_db to check the db connection and then runs the database migration and last it runs the server.
+    command: >
+      sh -c "
+        echo Waiting for db service start...;
+        while ! nc -z db 3306;
+        do
+          sleep 1;
+        done;
+        echo Connected to db service!;
+      python manage.py wait_for_db && 
+      python manage.py migrate &&
+      python manage.py runserver 0.0.0.0:9000"
+    environment:
+      - DB_HOST=db
+      - DB_NAME=x_meme
+      - DB_USER=root
+      - DB_PASSWORD=root
+      - DEBUG=1
+  # It means app service depends on db service so db service should start first
+    depends_on:
+      - db
+    restart: on-failure
+  db:
+    image: mysql
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: x_meme
+      # MYSQL_ROOT_HOST: '%'
+    # ports:
+    #   - "3306:3306"
+    

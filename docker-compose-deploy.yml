@@ -1,0 +1,44 @@
+# This file is for only local development not for the production deployment
+version: "3"
+
+services:
+  app:
+    build:
+      context: .
+    volumes:
+      - static_data:/vol/web
+    environment:
+      - DB_HOST=db
+      - DB_NAME=x_meme
+      - DB_USER=root
+      - DB_PASSWORD=root
+      - DEBUG=0
+      - SECRET_KEY=samplesecretforproduction
+      - ALLOWED_HOSTS=127.0.0.1,localhost,x-meme.tk
+    # It means app service depends on app service so db service should start first
+    depends_on:
+      - db
+    restart: on-failure
+  proxy:
+    build:
+      context: ./nginx
+    volumes:
+      - static_data:/vol/static
+    ports:
+      - "9090:9090"
+    depends_on: 
+      - app
+    restart: on-failure
+  db:
+    image: mysql
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: x_meme
+      # MYSQL_ROOT_HOST: '%'
+    # ports:
+    #   - "3306:3306"
+volumes:
+  static_data:
+    
